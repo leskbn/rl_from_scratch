@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+
+# RL outputs
+runs/
+wandb/
+checkpoints/
+videos/
+*.pt
+*.pth
+
+# Build/test
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
