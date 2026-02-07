@@ -11,7 +11,10 @@ from rl.utils.visualize import print_policy_arrows
 
 def main():
     # env 생성
-    env = GridWorld(H=5, W=5, start=(0, 0), goal=(4, 4), max_steps=100)
+    obstacles = [(2, 1), (3, 4)]
+    env = GridWorld(
+        H=6, W=6, start=(0, 0), goal=(4, 4), max_steps=100, obstacles=obstacles
+    )
 
     # S, A 준비
     S = env.S

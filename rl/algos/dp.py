@@ -2,8 +2,10 @@ import numpy as np
 
 
 # Iterative Policy Evaluation
-# v_{k+1}(s) = Σ_a π(a|s) [ R_s^a + γ Σ_{s'} P_{ss'}^a v_k(s') ]
+# v_{k+1}(s) = Σ_{a∈A} π(a|s) · Σ_{s'∈S} P_{ss'}^a · [ r(s,a,s') + γ · v_k(s') ]
+# = v_{k+1}(s) = Σ_a π(a|s) [ R_s^a + γ Σ_{s'} P_{ss'}^a v_k(s') ]
 # (Deterministic GridWorld에서는 Σ_{s'} P_{ss'}^a v_k(s') = v_k(s_next) 로 축약됨. (다음 상태는 하나로 정해짐 => P=1))
+# transition 확률은 원래는 존재하여 DP에 필요하고 알아야 계산 가능
 # => v_{k+1}(s) = Σ_a π(a|s) [ R_s^a + γ v_k(s') ] => 이걸 모든 state에 대해서
 def policy_evaluation(
     env,
@@ -26,18 +28,20 @@ def policy_evaluation(
         delta = 0
 
         for s in range(S):  # 모든 상태 s에 대해 V 업데이트
+            r, c = env.decode(s)
+            if (r, c) in env.obstacles:
+                continue
             if s == env.goal_id:
                 continue  # terminal 상태는 가치를 0으로
 
             v_old = V[s]
             v_new = 0
-            # v_{k+1}(s) = Σ_a π(a|s) [ R_s^a + γ v_k(s') ]
+            # v_{k+1}(s) = Σ_{a∈A} π(a|s) · Σ_{s'∈S} P_{ss'}^a · [ r(s,a,s') + γ · v_k(s') ]
             for a in range(A):  # 한 state s에서 모든 action들에 대해 V[s] 업데이트
                 p = policy[s, a]  # π(a|s)
-                s_next, r, done = env.transition(s, a)
+                for prob, s_next, r, done in env.transition(s, a):
+                    v_new += p * prob * (r + gamma * V[s_next] * (0.0 if done else 1.0))
 
-                # 한 a에 대해 이어지는 다음 상태가 deterministic 하므로 그대로 V[s_next] 이용
-                v_new += p * (r + gamma * V[s_next] * (0.0 if done else 1.0))
             # 즉시즉시 비동기 업데이트. 다른 상태의 V 업데이트 시에 새로운 V를 바로 참조하게 됨
             V[s] = v_new
             delta = max(delta, abs(v_new - v_old))
@@ -62,6 +66,9 @@ def policy_improvement(env, V, gamma, policy):
     stable = True
 
     for s in range(env.S):
+        r, c = env.decode(s)
+        if (r, c) in env.obstacles:
+            continue
         if s == env.goal_id:
             continue
 
@@ -71,8 +78,10 @@ def policy_improvement(env, V, gamma, policy):
         best_q = -np.inf
 
         for a in range(env.n_actions):
-            s_next, r, done = env.transition(s, a)
-            q = r + gamma * V[s_next] * (0.0 if done else 1.0)
+            q = 0.0
+            for prob, s_next, r, done in env.transition(s, a):
+                q += prob * (r + gamma * V[s_next] * (0.0 if done else 1.0))
+
             if q >= best_q:
                 best_q = q
                 best_action = a
@@ -159,15 +168,19 @@ def value_iteration(
 
         for s in range(S):  # 모든 상태 s에 대해 V 업데이트
             max_q = -np.inf
+            r, c = env.decode(s)
+            if (r, c) in env.obstacles:
+                continue
             if s == env.goal_id:
                 continue  # terminal 상태는 가치를 0으로
 
             v_old = V[s]
             for a in range(A):  # 한 state s에서 모든 action들에 대해 V[s] 업데이트
-                s_next, r, done = env.transition(s, a)
+                q = 0.0
+                for prob, s_next, r, done in env.transition(s, a):
+                    # q(s,a) = R_s^a + γ V_k(s_next)  (terminal로 끝나면 미래항은 0)
+                    q += prob * (r + gamma * V[s_next] * (0.0 if done else 1.0))
 
-                # q(s,a) = R_s^a + γ V_k(s_next)  (terminal로 끝나면 미래항은 0)
-                q = r + gamma * V[s_next] * (0.0 if done else 1.0)
                 if q >= max_q:
                     max_q = q
 
@@ -192,14 +205,18 @@ def greedy_policy_from_V(env, V, gamma=0.99):
     policy = np.zeros((env.S, env.n_actions))
 
     for s in range(env.S):
+        r, c = env.decode(s)
+        if (r, c) in env.obstacles:
+            continue
         if s == env.goal_id:
             continue
         best_action = None
         best_q = -np.inf
 
         for a in range(env.n_actions):
-            s_next, r, done = env.transition(s, a)
-            q = r + gamma * V[s_next] * (0.0 if done else 1.0)
+            q = 0.0
+            for prob, s_next, r, done in env.transition(s, a):
+                q += prob * (r + gamma * V[s_next] * (0.0 if done else 1.0))
             if q >= best_q:
                 best_q = q
                 best_action = a

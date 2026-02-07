@@ -1,5 +1,7 @@
 class GridWorld:
-    def __init__(self, H=5, W=5, start=(0, 0), goal=(4, 4), max_steps=100):
+    def __init__(
+        self, H=5, W=5, start=(0, 0), goal=(4, 4), obstacles=None, max_steps=100
+    ):
         self.H = H
         self.W = W
         self.S = H * W
@@ -9,6 +11,7 @@ class GridWorld:
         self.t = 0
         self.max_steps = max_steps
         self.n_actions = 4
+        self.obstacles = set(obstacles) if obstacles else set()
 
     def reset(self, seed=None):
         """return state_id"""
@@ -36,6 +39,10 @@ class GridWorld:
 
         nr = min(max(nr, 0), self.H - 1)
         nc = min(max(nc, 0), self.W - 1)
+
+        if (nr, nc) in self.obstacles:
+            nr = r
+            nc = c
 
         next_state_id = self.encode(nr, nc)
 
@@ -75,6 +82,10 @@ class GridWorld:
         nr = min(max(nr, 0), self.H - 1)
         nc = min(max(nc, 0), self.W - 1)
 
+        if (nr, nc) in self.obstacles:
+            nr = r
+            nc = c
+
         s_next = self.encode(nr, nc)
 
         reward = -1
@@ -82,7 +93,9 @@ class GridWorld:
         if s_next == self.goal_id:
             done = True
 
-        return s_next, reward, done
+        prob = 1.0  # deterministic 환경
+
+        return [(prob, s_next, reward, done)]
 
     # 유틸
     def encode(self, r: int, c: int) -> int:
