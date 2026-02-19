@@ -42,6 +42,9 @@ def mc_first_visit_prediction(env, policy, num_episodes, gamma, max_steps=100):
         for t in range(len(states)):
             G_t = returns[t]
             s = states[t]
+            r, c = env.decode(s)
+            if s == env.goal_id or ((r, c) in getattr(env, "obstacles", set())):
+                continue
             if s not in visited:
                 visited.add(s)
                 N[s] += 1
@@ -62,6 +65,9 @@ def mc_every_visit_prediction(env, policy, num_episodes, gamma, max_steps=100):
         for t in reversed(range(len(rewards))):
             G = rewards[t] + gamma * G
             s = states[t]
+            r, c = env.decode(s)
+            if s == env.goal_id or ((r, c) in getattr(env, "obstacles", set())):
+                continue
             N[s] += 1
             # incremental mean, 모든 에피소드를 다 끝내고 평균 내는 것이 아니라 에피소드마다 업데이트 하기 위해
             V[s] += (G - V[s]) / N[s]
@@ -127,11 +133,17 @@ def mc_control_on_policy(env, num_episodes, gamma, eps, max_steps, first_visit=T
             visited = set()
 
             for t in range(len(states)):
-                G_t = returns[t]
                 s = states[t]
                 a = actions[t]
+                G_t = returns[t]
+
+                r, c = env.decode(s)
+                if s == env.goal_id or ((r, c) in getattr(env, "obstacles", set())):
+                    continue
+
                 if (s, a) not in visited:
                     visited.add((s, a))
+
                     N[s, a] += 1
                     Q[s, a] += (G_t - Q[s, a]) / N[s, a]
         else:
@@ -139,6 +151,10 @@ def mc_control_on_policy(env, num_episodes, gamma, eps, max_steps, first_visit=T
                 G = rewards[t] + gamma * G
                 s = states[t]
                 a = actions[t]
+
+                r, c = env.decode(s)
+                if s == env.goal_id or ((r, c) in getattr(env, "obstacles", set())):
+                    continue
                 N[s, a] += 1
                 Q[s, a] += (G - Q[s, a]) / N[s, a]
 
