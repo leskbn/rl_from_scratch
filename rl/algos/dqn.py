@@ -4,6 +4,31 @@ import numpy as np
 from rl.nets.q_network import QNetwork
 from rl.buffers.replay_buffer import ReplayBuffer
 
+# DQN (Deep Q-Network) - Mnih et al. 2015
+# Q-Learning에 신경망을 결합한 알고리즘
+#
+# 기존 Q-Learning의 한계:
+# 1. Q테이블: 상태가 연속적인 실수값이면 테이블 표현 불가
+# 2. 매 스텝 바로 학습: 연속된 경험의 상관관계 → 학습 불안정
+#
+# DQN의 해결책:
+# 1. Q테이블 → 신경망으로 대체: Q(s,a;θ) ≈ Q*(s,a)
+# 2. Replay Buffer: 경험 (s,a,r,s',done) 저장 → 랜덤 샘플링으로 상관관계 제거
+# 3. Target Network: TD target 계산용 별도 네트워크 → 학습 안정화
+#
+# Q-Learning 업데이트식:
+# Q(s,a) ← Q(s,a) + α[r + γ max_a' Q(s',a') - Q(s,a)]
+#
+# DQN loss:
+# L(θ) = E[(r + γ max_a' Q(s',a';θ⁻) - Q(s,a;θ))²]
+# θ⁻: Target Network 파라미터 (고정), θ: Q Network 파라미터 (업데이트)
+#
+# TD target = r + γ max_a' Q(s',a';θ⁻)  ← Target Network로 계산 (고정된 목표)
+# TD error  = TD target - Q(s,a;θ)       ← Q Network로 계산
+#
+# off-policy: Replay Buffer의 과거 경험으로 학습 → Q-Learning 선택 이유
+# (SARSA 같은 on-policy는 현재 policy의 경험만 사용 가능)
+
 
 class DQN:
     def __init__(
@@ -101,6 +126,8 @@ class DQN:
         self.optimizer.step()
 
         self.C += 1
+
+        # C 스텝마다 타겟 네트워크에 파라미터 복사
         if self.C >= self.target_update_freq:
             self.update_target()
             self.C = 0

@@ -20,6 +20,8 @@ checkpoints/
 videos/
 *.pt
 *.pth
+*.json
+result/
 
 # Build/test
 dist/
