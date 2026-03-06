@@ -1,4 +1,4 @@
-# python -m scripts.run_dp
+# python -m scripts.dp.run
 
 import numpy as np
 from rl.envs.gridworld import GridWorld

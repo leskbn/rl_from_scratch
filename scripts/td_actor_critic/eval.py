@@ -1,14 +1,14 @@
-# python -m scripts.eval_reinforce
+# python -m scripts.td_actor_critic.eval
 import os
 import json
 import gymnasium as gym
 import torch
-from rl.algos.reinforce import REINFORCE
+from rl.algos.td_actor_critic import TDActorCritic
 from datetime import datetime
 
 
 def main():
-    env_name = "CartPole-v1"
+    env_name = "LunarLander-v3"
     # 환경 생성
     env = gym.make(env_name, render_mode="human")
     num_episodes = 5
@@ -16,12 +16,12 @@ def main():
     # 하이퍼파라미터
     learning_rate = 1e-3
     gamma = 0.990
-    hidden_dim = 64
+    hidden_dim = 128
 
     obs_dim = env.observation_space.shape[0]
     n_actions = env.action_space.n
 
-    reinforce = REINFORCE(
+    td_actor_critic = TDActorCritic(
         obs_dim=obs_dim,
         n_actions=n_actions,
         hidden_dim=hidden_dim,
@@ -30,9 +30,9 @@ def main():
     )
 
     # 학습 모델 불러오기
-    reinforce.policy_network.load_state_dict(
+    td_actor_critic.policy_network.load_state_dict(
         torch.load(
-            "results/reinforce/CartPole-v1_20260302_133150/best_policy_network.pth",
+            "results/td_actor_critic/LunarLander-v3_20260302_201103/policy_network.pth",
             weights_only=True,
         )
     )
@@ -46,7 +46,7 @@ def main():
         total_ep_reward = 0
         while not done:
             # action 선택
-            action = reinforce.select_greedy_action(state)
+            action = td_actor_critic.select_greedy_action(state)
             # step
             next_state, reward, terminated, truncated, _ = env.step(action)
             # push

@@ -1,4 +1,4 @@
-# python -m scripts.run_ppo_continuous_vecenv
+# python -m scripts.ppo.run_continuous_vecenv
 import os
 import json
 import gymnasium as gym

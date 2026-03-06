@@ -1,43 +1,50 @@
-# python -m scripts.eval_a2c
+# python -m scripts.dqn.eval
 import os
 import json
 import gymnasium as gym
 import torch
-from rl.algos.a2c import A2C
+from rl.algos.dqn import DQN
 from datetime import datetime
 
 
 def main():
-    env_name = "LunarLander-v3"
+    env_name = "CartPole-v1"
     # 환경 생성
     env = gym.make(env_name, render_mode="human")
-    num_episodes = 5
 
     # 하이퍼파라미터
     learning_rate = 1e-3
-    gamma = 0.990
-    hidden_dim = 128
+    gamma = 0.99
+    buffer_capacity = 10000
+    batch_size = 64
+    target_update_freq = 100
+    hidden_dim = 64
+    num_episodes = 3
 
     obs_dim = env.observation_space.shape[0]
     n_actions = env.action_space.n
 
-    a2c = A2C(
+    # DQN 생성
+    dqn = DQN(
         obs_dim=obs_dim,
         n_actions=n_actions,
         hidden_dim=hidden_dim,
         lr=learning_rate,
         gamma=gamma,
+        buffer_capacity=buffer_capacity,
+        batch_size=batch_size,
+        target_update_freq=target_update_freq,
     )
 
     # 학습 모델 불러오기
-    a2c.policy_network.load_state_dict(
+    dqn.q_network.load_state_dict(
         torch.load(
-            "results/a2c/LunarLander-v3_20260304_121633/best_policy_network.pth",
-            weights_only=True,
+            "results/dqn/CartPole-v1_20260226_193658/q_network.pth", weights_only=True
         )
     )
 
     total_ep_reward = 0
+    total_steps = 0
 
     # 학습 루프
     for episode in range(num_episodes):
@@ -46,7 +53,7 @@ def main():
         total_ep_reward = 0
         while not done:
             # action 선택
-            action = a2c.select_greedy_action(state)
+            action = dqn.select_greedy_action(state)
             # step
             next_state, reward, terminated, truncated, _ = env.step(action)
             # push
@@ -57,6 +64,7 @@ def main():
             state = next_state
 
             total_ep_reward += reward
+            total_steps += 1
 
         # 에피소드 결과 출력
         print(f"episode {episode} total reward: ", total_ep_reward)

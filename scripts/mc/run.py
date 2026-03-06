@@ -1,4 +1,4 @@
-# python -m scripts.run_mc
+# python -m scripts.mc.run
 
 import numpy as np
 

@@ -1,4 +1,4 @@
-# python -m scripts.run_td_control
+# python -m scripts.td_control.run
 
 import numpy as np
 

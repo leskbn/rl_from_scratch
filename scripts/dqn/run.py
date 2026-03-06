@@ -1,4 +1,4 @@
-# python -m scripts.run_dqn
+# python -m scripts.dqn.run
 import os
 import json
 import gymnasium as gym

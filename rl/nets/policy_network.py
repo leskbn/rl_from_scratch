@@ -2,17 +2,21 @@ import torch.nn as nn
 
 
 class PolicyNetwork(nn.Module):
-    def __init__(self, obs_dim, n_actions, hidden_dim=128):
+    def __init__(self, obs_dim, n_actions, hidden_dim=[64, 64], activation=nn.ReLU):
         super().__init__()
-        # 레이어 정의
-        self.net = nn.Sequential(
-            nn.Linear(obs_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, n_actions),
-            nn.Softmax(dim=-1),
-        )
+        if isinstance(hidden_dim, int):
+            hidden_dim = [hidden_dim]
+
+        layers = []
+        in_dim = obs_dim
+        for h in hidden_dim:
+            layers.append(nn.Linear(in_dim, h))
+            layers.append(activation())
+            in_dim = h
+
+        layers.append(nn.Linear(in_dim, n_actions))
+        layers.append(nn.Softmax(dim=-1))
+        self.net = nn.Sequential(*layers)
 
     def forward(self, x):
         return self.net(x)

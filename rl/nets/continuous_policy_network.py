@@ -5,6 +5,8 @@ import torch
 class ContinuousPolicyNetwork(nn.Module):
     def __init__(self, obs_dim, n_actions, hidden_dims=[64, 64], activation=nn.Tanh):
         super().__init__()
+        if isinstance(hidden_dims, int):
+            hidden_dims = [hidden_dims]
 
         layers = []
         in_dim = obs_dim

@@ -41,18 +41,30 @@ class DQN:
         buffer_capacity,
         batch_size,
         target_update_freq,
+        activation_func=nn.ReLU,
     ):
         self.n_actions = n_actions
         self.target_update_freq = target_update_freq
         self.lr = lr
         self.gamma = gamma
+        self.activation_func = activation_func
 
         self.C = 0
 
         # Q Network
-        self.q_network = QNetwork(obs_dim, n_actions, hidden_dim)
+        self.q_network = QNetwork(
+            obs_dim=obs_dim,
+            n_actions=n_actions,
+            hidden_dim=hidden_dim,
+            activation=self.activation_func,
+        )
         # Target Network
-        self.target_q_network = QNetwork(obs_dim, n_actions, hidden_dim)
+        self.target_q_network = QNetwork(
+            obs_dim=obs_dim,
+            n_actions=n_actions,
+            hidden_dim=hidden_dim,
+            activation=self.activation_func,
+        )
         self.target_q_network.load_state_dict(self.q_network.state_dict())
         # Optimizer
         self.optimizer = torch.optim.Adam(self.q_network.parameters(), lr=lr)

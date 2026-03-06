@@ -35,20 +35,36 @@ from rl.nets.value_network import ValueNetwork
 
 
 class ActorCritic:
-    def __init__(self, obs_dim, n_actions, hidden_dim, lr, gamma):
+    def __init__(
+        self,
+        obs_dim,
+        n_actions,
+        hidden_dim,
+        lr,
+        gamma,
+        policy_activation_func=nn.ReLU,
+        value_activation_func=nn.Tanh,
+    ):
         self.obs_dim = obs_dim
         self.n_actions = n_actions
         self.hidden_dim = hidden_dim
         self.lr = lr
         self.gamma = gamma
+        self.policy_activation_func = policy_activation_func
+        self.value_activation_func = value_activation_func
 
         # Policy Network (Actor)
         self.policy_network = PolicyNetwork(
-            self.obs_dim, self.n_actions, self.hidden_dim
+            self.obs_dim,
+            self.n_actions,
+            self.hidden_dim,
+            activation=self.policy_activation_func,
         )
 
         # Value Network (Critic)
-        self.value_network = ValueNetwork(self.obs_dim, self.hidden_dim)
+        self.value_network = ValueNetwork(
+            self.obs_dim, self.hidden_dim, activation=self.value_activation_func
+        )
 
         # Optimizer
         self.policy_optimizer = torch.optim.Adam(

@@ -1,35 +1,33 @@
-# python -m scripts.run_reinforce
+# python -m scripts.actor_critic.run
 import os
 import json
 import gymnasium as gym
 import torch
-from rl.algos.reinforce import REINFORCE
+from rl.algos.actor_critic import ActorCritic
 from datetime import datetime
 
 
 def main():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    env_name = "CartPole-v1"
-    save_dir = f"results/reinforce/{env_name}_{timestamp}"
+    env_name = "LunarLander-v3"
+    save_dir = f"results/actor_critic/{env_name}_{timestamp}"
     os.makedirs(save_dir, exist_ok=True)
 
     # 환경 생성
     env = gym.make(env_name)
-    num_episodes = 1000
-
-    # 저장 경로 설정
+    num_episodes = 3000
 
     rewards_history = []
 
     # 하이퍼파라미터
-    learning_rate = 1e-3
+    learning_rate = 3e-4
     gamma = 0.990
-    hidden_dim = 64
+    hidden_dim = 128
 
     obs_dim = env.observation_space.shape[0]
     n_actions = env.action_space.n
 
-    reinforce = REINFORCE(
+    actor_critic = ActorCritic(
         obs_dim=obs_dim,
         n_actions=n_actions,
         hidden_dim=hidden_dim,
@@ -48,9 +46,10 @@ def main():
 
         rewards = []
         log_probs = []
+        states = []
         while not done:
             # action 선택
-            action, log_prob = reinforce.select_action(state)
+            action, log_prob = actor_critic.select_action(state)
             # step
             next_state, reward, terminated, truncated, _ = env.step(action.item())
 
@@ -59,6 +58,7 @@ def main():
 
             rewards.append(reward)
             log_probs.append(log_prob)
+            states.append(state)
 
             # state 업데이트
             state = next_state
@@ -66,22 +66,22 @@ def main():
             total_ep_reward += reward
 
         # update
-        reinforce.update(rewards, log_probs)
+        actor_critic.update(states, rewards, log_probs)
 
         # 에피소드 결과 출력
         print(f"episode {episode} total reward: ", total_ep_reward)
         rewards_history.append(total_ep_reward)
 
-        # variance가 높기 때문에 학습 중간에 최고 점수를 받은 모델을 저장
+        # 학습 중 최고 점수를 받은 모델을 저장
         if total_ep_reward > best_reward:
             best_reward = total_ep_reward
             torch.save(
-                reinforce.policy_network.state_dict(),
-                f"{save_dir}/policy_network.pth",
+                actor_critic.policy_network.state_dict(),
+                f"{save_dir}/best_policy_network.pth",
             )
 
     torch.save(
-        reinforce.policy_network.state_dict(),
+        actor_critic.policy_network.state_dict(),
         f"{save_dir}/policy_network.pth",  # 마지막
     )
     with open(f"{save_dir}/rewards.json", "w") as f:

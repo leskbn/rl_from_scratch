@@ -35,16 +35,22 @@ from rl.nets.policy_network import PolicyNetwork
 
 
 class REINFORCE:
-    def __init__(self, obs_dim, n_actions, hidden_dim, lr, gamma):
+    def __init__(
+        self, obs_dim, n_actions, hidden_dim, lr, gamma, activation_func=nn.ReLU
+    ):
         self.obs_dim = obs_dim
         self.n_actions = n_actions
         self.hidden_dim = hidden_dim
         self.lr = lr
         self.gamma = gamma
+        self.activation_func = activation_func
 
         # Policy Network
         self.policy_network = PolicyNetwork(
-            self.obs_dim, self.n_actions, self.hidden_dim
+            self.obs_dim,
+            self.n_actions,
+            self.hidden_dim,
+            activation=self.activation_func,
         )
 
         # Optimizer

@@ -1,39 +1,51 @@
-# python -m scripts.eval_td_actor_critic
+# python -m scripts.ddpg.eval
 import os
 import json
 import gymnasium as gym
 import torch
-from rl.algos.td_actor_critic import TDActorCritic
+from rl.algos.ddpg import DDPG
 from datetime import datetime
 
 
 def main():
-    env_name = "LunarLander-v3"
+    env_name = "Hopper-v5"
+
     # 환경 생성
     env = gym.make(env_name, render_mode="human")
-    num_episodes = 5
+    action_high = env.action_space.high
+
+    # 저장 경로 설정
+    rewards_history = []
 
     # 하이퍼파라미터
-    learning_rate = 1e-3
-    gamma = 0.990
-    hidden_dim = 128
+    lr_actor = 1e-4
+    lr_critic = 1e-3
+    gamma = 0.99
+    buffer_size = 1_000_000
+    batch_size = 64
+    hidden_dim = [400, 300]
+    num_episodes = 5
+    tau = 0.005
 
     obs_dim = env.observation_space.shape[0]
-    n_actions = env.action_space.n
+    n_actions = env.action_space.shape[0]
 
-    td_actor_critic = TDActorCritic(
+    # DDPG 생성
+    ddpg = DDPG(
         obs_dim=obs_dim,
         n_actions=n_actions,
         hidden_dim=hidden_dim,
-        lr=learning_rate,
+        lr_actor=lr_actor,
+        lr_critic=lr_critic,
         gamma=gamma,
+        tau=tau,
+        buffer_size=buffer_size,
+        batch_size=batch_size,
+        action_high=action_high,
     )
-
-    # 학습 모델 불러오기
-    td_actor_critic.policy_network.load_state_dict(
+    ddpg.actor.load_state_dict(
         torch.load(
-            "results/td_actor_critic/LunarLander-v3_20260302_201103/policy_network.pth",
-            weights_only=True,
+            "results/ddpg/Hopper-v5_20260305_220923/best_actor.pth", weights_only=True
         )
     )
 
@@ -46,7 +58,8 @@ def main():
         total_ep_reward = 0
         while not done:
             # action 선택
-            action = td_actor_critic.select_greedy_action(state)
+            action = ddpg.select_greedy_action(state)
+            action = action * action_high
             # step
             next_state, reward, terminated, truncated, _ = env.step(action)
             # push
@@ -60,6 +73,7 @@ def main():
 
         # 에피소드 결과 출력
         print(f"episode {episode} total reward: ", total_ep_reward)
+        rewards_history.append(total_ep_reward)
 
 
 if __name__ == "__main__":

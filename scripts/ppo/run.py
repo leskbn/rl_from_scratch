@@ -1,32 +1,31 @@
-# python -m scripts.run_ppo_continuous
+# python -m scripts.ppo.run
 import os
 import json
 import gymnasium as gym
 import torch
 import torch.nn as nn
 from rl.algos.ppo import PPO
-import numpy as np
 from datetime import datetime
 
 
 def main():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    env_name = "Walker2d-v5"
+    env_name = "LunarLander-v3"
     save_dir = f"results/ppo/{env_name}_{timestamp}"
     os.makedirs(save_dir, exist_ok=True)
 
     # 환경 생성
-    env = gym.make(env_name, render_mode="human")
+    env = gym.make(env_name)
 
     rewards_history = []
 
     # 하이퍼파라미터
     lr = 3e-4
-    gamma = 0.99
+    gamma = 0.990
     lam = 0.95
 
-    hidden_dim = [64, 64]
-    activation_func = nn.Tanh
+    hidden_dim = 256
+    activation_func = nn.ReLU
 
     eps_clip = 0.2  # clipping 범위
     K_epochs = 10  # 반복 업데이트 횟수
@@ -41,9 +40,7 @@ def main():
     num_iterations = 500  # 총 iterations (총 스텝 = T * num_iterations = 1,024,000)
 
     obs_dim = env.observation_space.shape[0]
-    n_actions = env.action_space.shape[0]
-    action_low = env.action_space.low
-    action_high = env.action_space.high
+    n_actions = env.action_space.n
 
     ppo = PPO(
         obs_dim=obs_dim,
@@ -58,13 +55,11 @@ def main():
         c1=c1,
         c2=c2,
         minibatch_size=minibatch_size,
-        continuous=True,
-        action_high=action_high,
-        action_low=action_low,
+        continuous=False,
     )
 
     best_avg_reward = -float("inf")
-    total_steps = 0
+
     # 학습 루프
     for iteration in range(num_iterations):
         state, _ = env.reset()
@@ -77,8 +72,6 @@ def main():
         for t in range(T):
             # action 선택
             action, log_prob, value = ppo.select_action(state)
-            action = np.clip(action, action_low, action_high)
-
             # step
             next_state, reward, terminated, truncated, _ = env.step(action)
 
@@ -95,7 +88,6 @@ def main():
             state = next_state
 
             ep_reward += reward
-            total_steps += 1
 
             if done:
                 ep_rewards.append(ep_reward)
@@ -112,7 +104,7 @@ def main():
             mean_reward = sum(ep_rewards) / len(ep_rewards)
             rewards_history.append(mean_reward)
             print(
-                f"Iteration {iteration} mean reward: {mean_reward:.1f} ({len(ep_rewards)} episodes) steps: {total_steps}"
+                f"Iteration {iteration} mean reward: {mean_reward:.1f} ({len(ep_rewards)} episodes)"
             )
 
             # 최근 10 iteration 평균으로 best 저장

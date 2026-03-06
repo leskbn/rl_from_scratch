@@ -1,4 +1,4 @@
-# python -m scripts.run_td
+# python -m scripts.td.run
 
 import numpy as np
 

@@ -1,4 +1,4 @@
-# python -m scripts.run_a2c
+# python -m scripts.a2c.run
 import os
 import json
 import gymnasium as gym

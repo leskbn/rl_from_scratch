@@ -1,4 +1,4 @@
-# python -m scripts.eval_ppo_continuous
+# python -m scripts.ppo.eval_continuous
 import os
 import json
 import gymnasium as gym

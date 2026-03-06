@@ -1,4 +1,4 @@
-# python -m scripts.run_td_actor_critic
+# python -m scripts.td_actor_critic.run
 import os
 import json
 import gymnasium as gym

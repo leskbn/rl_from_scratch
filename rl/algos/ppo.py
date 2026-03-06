@@ -75,6 +75,8 @@ from rl.nets.value_network import ValueNetwork
 # PPO의 학습 파이프라인은 다른 알고리즘이 사용 가능
 # r_t = π_new / π_old 로 policy 변화량을 측정하고 clip으로 제한하는 것 — PPO의 본질
 
+# On-policy인 이유: policy_new 업데이트에 사용되는 rollout을 채우는 시점에서는 policy_old = policy_new이므로
+
 # endregion
 
 
@@ -134,8 +136,18 @@ class PPO:
             )
 
         else:
-            self.policy_network = PolicyNetwork(obs_dim, n_actions, hidden_dim)
-            self.policy_network_old = PolicyNetwork(obs_dim, n_actions, hidden_dim)
+            self.policy_network = PolicyNetwork(
+                obs_dim=obs_dim,
+                n_actions=n_actions,
+                hidden_dim=hidden_dim,
+                activation=self.activation_func,
+            )
+            self.policy_network_old = PolicyNetwork(
+                obs_dim=obs_dim,
+                n_actions=n_actions,
+                hidden_dim=hidden_dim,
+                activation=self.activation_func,
+            )
 
         self.policy_network_old.load_state_dict(self.policy_network.state_dict())
 
@@ -163,7 +175,9 @@ class PPO:
         with torch.no_grad():
             if self.continuous:
                 mean, std = self.policy_network_old(state_tensor)
+                # policy network에서 나온 action의 평균과 표준편차로 가우시안 분포생성
                 dist = torch.distributions.Normal(mean, std)
+                # 가우시안 분포(연속 확률분포)에서 action 샘플링
                 action = dist.sample()
                 log_prob = dist.log_prob(action).sum(dim=-1)
             else:

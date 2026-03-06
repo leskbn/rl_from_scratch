@@ -6,20 +6,36 @@ from rl.nets.value_network import ValueNetwork
 
 
 class TDActorCritic:
-    def __init__(self, obs_dim, n_actions, hidden_dim, lr, gamma):
+    def __init__(
+        self,
+        obs_dim,
+        n_actions,
+        hidden_dim,
+        lr,
+        gamma,
+        policy_activation_func=nn.ReLU,
+        value_activation_func=nn.Tanh,
+    ):
         self.obs_dim = obs_dim
         self.n_actions = n_actions
         self.hidden_dim = hidden_dim
         self.lr = lr
         self.gamma = gamma
+        self.policy_activation_func = policy_activation_func
+        self.value_activation_func = value_activation_func
 
         # Policy Network (Actor)
         self.policy_network = PolicyNetwork(
-            self.obs_dim, self.n_actions, self.hidden_dim
+            self.obs_dim,
+            self.n_actions,
+            self.hidden_dim,
+            activation=self.policy_activation_func,
         )
 
         # Value Network (Critic)
-        self.value_network = ValueNetwork(self.obs_dim, self.hidden_dim)
+        self.value_network = ValueNetwork(
+            self.obs_dim, self.hidden_dim, activation=self.value_activation_func
+        )
 
         # Optimizer
         self.policy_optimizer = torch.optim.Adam(
@@ -33,7 +49,9 @@ class TDActorCritic:
         # 확률분포에서 샘플링
         state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
         probs = self.policy_network(state_tensor)
+        # policy net에서 뽑은 각 action의 확률들로 Categorical 분포 생성
         dist = torch.distributions.Categorical(probs)
+        # 해당 분포의 각 action 확률에 따라 action 하나 샘플링
         action = dist.sample()
         log_prob = dist.log_prob(action)
 
