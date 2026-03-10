@@ -57,9 +57,9 @@ def main():
         while not done:
             # action 선택
             action = ddpg.select_action(state)
-            action = action * action_high
+            action_scaled = action * action_high
             # step
-            next_state, reward, terminated, truncated, _ = env.step(action)
+            next_state, reward, terminated, truncated, _ = env.step(action_scaled)
             # push
             if terminated or truncated:
                 done = True
